@@ -1,0 +1,59 @@
+# =============================================================================
+# Database Registry
+# =============================================================================
+# Single source of truth for all instances, databases, and secret names.
+# Scripts and workflows read this file — add a DB here and it's automatically
+# picked up by the migration pipeline, validator, and snapshot tooling.
+#
+# Secret names reference GitHub Secrets (never put actual values here).
+# =============================================================================
+
+instances:
+
+  instance-1:
+    description: "Primary US-East cluster (Postgres)"
+    type: postgres
+    environments:
+      development:
+        host_secret: INSTANCE1_DEV_HOST
+        port: 5432
+      staging:
+        host_secret: INSTANCE1_STG_HOST
+        port: 5432
+      production:
+        host_secret: INSTANCE1_PRD_HOST
+        port: 5432
+    databases:
+      - name: db-orders
+        schema_path: src/schemas/instance-1/db-orders/index.ts
+        migrations_path: migrations/instances/instance-1/db-orders
+        user_secret: INSTANCE1_ORDERS_USER
+        pass_secret: INSTANCE1_ORDERS_PASS
+        snapshot_enabled: true
+      - name: db-inventory
+        schema_path: src/schemas/instance-1/db-inventory/index.ts
+        migrations_path: migrations/instances/instance-1/db-inventory
+        user_secret: INSTANCE1_INVENTORY_USER
+        pass_secret: INSTANCE1_INVENTORY_PASS
+        snapshot_enabled: true
+
+  instance-2:
+    description: "EU-West cluster (MySQL)"
+    type: mysql
+    environments:
+      development:
+        host_secret: INSTANCE2_DEV_HOST
+        port: 3306
+      staging:
+        host_secret: INSTANCE2_STG_HOST
+        port: 3306
+      production:
+        host_secret: INSTANCE2_PRD_HOST
+        port: 3306
+    databases:
+      - name: db-users
+        schema_path: src/schemas/instance-2/db-users/index.ts
+        migrations_path: migrations/instances/instance-2/db-users
+        user_secret: INSTANCE2_USERS_USER
+        pass_secret: INSTANCE2_USERS_PASS
+        snapshot_enabled: true

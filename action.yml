@@ -1,0 +1,32 @@
+# =============================================================================
+# .github/actions/setup-node/action.yml
+# =============================================================================
+# Composite action to install Node.js and cache npm dependencies.
+# Used by all jobs to keep the main workflow DRY.
+# =============================================================================
+
+name: Setup Node
+description: Install Node.js and npm dependencies with caching
+
+inputs:
+  node-version:
+    description: "Node.js version"
+    required: false
+    default: "22"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Verify tsx available
+      shell: bash
+      run: npx tsx --version

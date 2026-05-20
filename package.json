@@ -1,0 +1,31 @@
+{
+  "name": "db-migrations",
+  "version": "1.0.0",
+  "description": "Database schema management with Drizzle ORM + GitHub Actions",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate":   "drizzle-kit generate",
+    "migrate":    "tsx scripts/migrate.ts",
+    "validate":   "tsx scripts/validate_migrations.ts",
+    "snapshot":   "tsx scripts/snapshot_schema.ts",
+    "checksum":   "tsx scripts/checksum_guard.ts",
+    "studio":     "drizzle-kit studio",
+    "prepare":    "husky"
+  },
+  "dependencies": {
+    "drizzle-orm":    "^0.41.0",
+    "pg":             "^8.13.0",
+    "mysql2":         "^3.11.0"
+  },
+  "devDependencies": {
+    "drizzle-kit":    "^0.30.0",
+    "tsx":            "^4.19.0",
+    "typescript":     "^5.7.0",
+    "@types/pg":      "^8.11.0",
+    "@types/node":    "^22.0.0",
+    "husky":          "^9.1.0",
+    "js-yaml":        "^4.1.0",
+    "@types/js-yaml": "^4.0.9"
+  }
+}

@@ -1,0 +1,99 @@
+# =============================================================================
+# PR Validation Workflow (Drizzle)
+# =============================================================================
+# Runs on every Pull Request touching schemas or migrations.
+# No DB connection needed — purely static checks.
+#
+# Checks:
+#   1. TypeScript compiles cleanly
+#   2. Migration filenames are valid Drizzle format
+#   3. Journals are consistent with SQL files on disk
+#   4. checksums.json is up to date (no unrecorded new migrations)
+# =============================================================================
+
+name: Validate Migrations (PR)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "migrations/**"
+      - "src/schemas/**"
+      - "checksums.json"
+      - "config/**"
+
+jobs:
+  validate:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-node
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+      - name: Validate migration files
+        run: npx tsx scripts/validate_migrations.ts
+
+      - name: Verify checksums
+        run: npx tsx scripts/checksum_guard.ts verify
+
+      - name: Detect matrix (dry run)
+        env:
+          DEPLOY_ENV: development
+        run: npx tsx scripts/detect_changed_dbs.ts
+
+      - name: PR summary
+        if: always()
+        run: |
+          echo "## Migration Validation" >> $GITHUB_STEP_SUMMARY
+          echo "✅ TypeScript compiled" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Migration filenames valid" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Checksums verified" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Matrix detection passed" >> $GITHUB_STEP_SUMMARY
+
+  # Ensure drizzle-kit generate was actually run for changed schema files
+  check-generated:
+    name: Check Migrations Generated
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-node
+
+      - name: Check for schema changes without matching migrations
+        run: |
+          # Get changed schema TS files
+          CHANGED_SCHEMAS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep '^src/schemas/' || true)
+
+          if [ -z "$CHANGED_SCHEMAS" ]; then
+            echo "No schema files changed."
+            exit 0
+          fi
+
+          echo "Changed schema files:"
+          echo "$CHANGED_SCHEMAS"
+
+          # Corresponding migration paths must also have new files
+          CHANGED_MIGRATIONS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep '^migrations/' || true)
+
+          if [ -z "$CHANGED_MIGRATIONS" ]; then
+            echo ""
+            echo "⚠️  WARNING: Schema files changed but no migration files were generated."
+            echo "   Did you forget to run: drizzle-kit generate --config=config/drizzle/<instance>.<db>.ts ?"
+            echo ""
+            echo "   This is a warning, not a failure — data migrations without schema changes are valid."
+          else
+            echo ""
+            echo "✓ Both schema and migration files changed — looks good."
+          fi

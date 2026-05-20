@@ -1,0 +1,252 @@
+# =============================================================================
+# Database Migration Pipeline (Drizzle ORM)
+# =============================================================================
+# Triggers on pushes to main that touch migration files or schema sources.
+# Promotes through dev → staging → production with an approval gate
+# before production.
+#
+# Prerequisites:
+#   1. GitHub Environments created: development, staging, production
+#   2. production environment has Required Reviewers configured
+#   3. All DB secrets added per environment in GitHub Settings
+# =============================================================================
+
+name: Database Migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "migrations/**"
+      - "src/schemas/**"
+      - "config/databases.yml"
+      - "checksums.json"
+
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Run migrations against this environment only"
+        required: true
+        default: development
+        type: choice
+        options: [development, staging, production]
+      force_all:
+        description: "Migrate all databases (not just changed ones)"
+        required: false
+        default: "false"
+        type: boolean
+
+concurrency:
+  group: db-migrations-${{ github.ref }}
+  cancel-in-progress: false   # Never interrupt an in-flight migration
+
+defaults:
+  run:
+    shell: bash
+
+# ════════════════════════════════════════════════════════════════════════════
+# JOB 1 — Detect changed databases & build matrix
+# ════════════════════════════════════════════════════════════════════════════
+jobs:
+  detect-changes:
+    name: Detect Changed Databases
+    runs-on: ubuntu-latest
+    outputs:
+      matrix:      ${{ steps.build-matrix.outputs.matrix }}
+      has_changes: ${{ steps.build-matrix.outputs.has_changes }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: ./.github/actions/setup-node
+
+      - name: Build migration matrix
+        id: build-matrix
+        env:
+          DEPLOY_ENV: development
+        run: npx tsx scripts/detect_changed_dbs.ts
+
+      - name: Summary
+        run: |
+          echo "### Detected Changes" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          echo '${{ steps.build-matrix.outputs.matrix }}' | npx tsx -e \
+            "process.stdout.write(JSON.stringify(JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')),null,2))" \
+            >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════
+  # JOB 2 — Development  (no approval gate)
+  # ════════════════════════════════════════════════════════════════════════
+  migrate-dev:
+    name: "Dev → ${{ matrix.instance }}/${{ matrix.db }}"
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    environment: development
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node
+
+      - name: Verify checksums (integrity gate)
+        run: npx tsx scripts/checksum_guard.ts verify
+
+      - name: Run migrations
+        env:
+          INSTANCE:    ${{ matrix.instance }}
+          DB:          ${{ matrix.db }}
+          DB_TYPE:     ${{ matrix.db_type }}
+          DB_HOST:     ${{ secrets[matrix.host_secret] }}
+          DB_PORT:     ${{ matrix.port }}
+          DB_USER:     ${{ secrets[matrix.user_secret] }}
+          DB_PASS:     ${{ secrets[matrix.pass_secret] }}
+          DEPLOY_ENV:  development
+        run: npx tsx scripts/migrate.ts
+
+      - name: Snapshot schema
+        if: matrix.snapshot_enabled == true
+        env:
+          INSTANCE: ${{ matrix.instance }}
+          DB:       ${{ matrix.db }}
+          DB_TYPE:  ${{ matrix.db_type }}
+          DB_HOST:  ${{ secrets[matrix.host_secret] }}
+          DB_PORT:  ${{ matrix.port }}
+          DB_USER:  ${{ secrets[matrix.user_secret] }}
+          DB_PASS:  ${{ secrets[matrix.pass_secret] }}
+        run: npx tsx scripts/snapshot_schema.ts
+
+      - name: Commit schema snapshot
+        if: matrix.snapshot_enabled == true
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(schema): snapshot ${{ matrix.instance }}/${{ matrix.db }} [dev] [skip ci]"
+          file_pattern: "schemas/${{ matrix.instance }}/${{ matrix.db }}/**"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # JOB 3 — Staging
+  # ════════════════════════════════════════════════════════════════════════
+  migrate-staging:
+    name: "Staging → ${{ matrix.instance }}/${{ matrix.db }}"
+    needs: [detect-changes, migrate-dev]
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    environment: staging
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: ./.github/actions/setup-node
+
+      - name: Verify checksums (integrity gate)
+        run: npx tsx scripts/checksum_guard.ts verify
+
+      - name: Run migrations
+        env:
+          INSTANCE:   ${{ matrix.instance }}
+          DB:         ${{ matrix.db }}
+          DB_TYPE:    ${{ matrix.db_type }}
+          DB_HOST:    ${{ secrets[matrix.host_secret] }}
+          DB_PORT:    ${{ matrix.port }}
+          DB_USER:    ${{ secrets[matrix.user_secret] }}
+          DB_PASS:    ${{ secrets[matrix.pass_secret] }}
+          DEPLOY_ENV: staging
+        run: npx tsx scripts/migrate.ts
+
+      - name: Snapshot schema
+        if: matrix.snapshot_enabled == true
+        env:
+          INSTANCE: ${{ matrix.instance }}
+          DB:       ${{ matrix.db }}
+          DB_TYPE:  ${{ matrix.db_type }}
+          DB_HOST:  ${{ secrets[matrix.host_secret] }}
+          DB_PORT:  ${{ matrix.port }}
+          DB_USER:  ${{ secrets[matrix.user_secret] }}
+          DB_PASS:  ${{ secrets[matrix.pass_secret] }}
+        run: npx tsx scripts/snapshot_schema.ts
+
+      - name: Commit schema snapshot
+        if: matrix.snapshot_enabled == true
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(schema): snapshot ${{ matrix.instance }}/${{ matrix.db }} [staging] [skip ci]"
+          file_pattern: "schemas/${{ matrix.instance }}/${{ matrix.db }}/**"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # JOB 4 — Production  ← APPROVAL GATE
+  # ════════════════════════════════════════════════════════════════════════
+  migrate-prod:
+    name: "Prod → ${{ matrix.instance }}/${{ matrix.db }}"
+    needs: [detect-changes, migrate-staging]
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    environment: production      # ← Required reviewers block here
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: ./.github/actions/setup-node
+
+      - name: Verify checksums (integrity gate)
+        run: npx tsx scripts/checksum_guard.ts verify
+
+      - name: Run migrations
+        env:
+          INSTANCE:   ${{ matrix.instance }}
+          DB:         ${{ matrix.db }}
+          DB_TYPE:    ${{ matrix.db_type }}
+          DB_HOST:    ${{ secrets[matrix.host_secret] }}
+          DB_PORT:    ${{ matrix.port }}
+          DB_USER:    ${{ secrets[matrix.user_secret] }}
+          DB_PASS:    ${{ secrets[matrix.pass_secret] }}
+          DEPLOY_ENV: production
+        run: npx tsx scripts/migrate.ts
+
+      - name: Snapshot schema
+        if: matrix.snapshot_enabled == true
+        env:
+          INSTANCE: ${{ matrix.instance }}
+          DB:       ${{ matrix.db }}
+          DB_TYPE:  ${{ matrix.db_type }}
+          DB_HOST:  ${{ secrets[matrix.host_secret] }}
+          DB_PORT:  ${{ matrix.port }}
+          DB_USER:  ${{ secrets[matrix.user_secret] }}
+          DB_PASS:  ${{ secrets[matrix.pass_secret] }}
+        run: npx tsx scripts/snapshot_schema.ts
+
+      - name: Commit schema snapshot
+        if: matrix.snapshot_enabled == true
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(schema): snapshot ${{ matrix.instance }}/${{ matrix.db }} [prod] [skip ci]"
+          file_pattern: "schemas/${{ matrix.instance }}/${{ matrix.db }}/**"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+      - name: Production deployment summary
+        run: |
+          echo "## ✅ Production Migration Complete" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Instance | \`${{ matrix.instance }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Database | \`${{ matrix.db }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| DB Type  | \`${{ matrix.db_type }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Approved by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
