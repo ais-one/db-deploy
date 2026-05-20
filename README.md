@@ -19,7 +19,7 @@ drizzle-kit generate --config=config/drizzle/instance-1.db-orders.ts
 # 3. Checksums are auto-updated by the pre-commit hook when you commit
 git add .
 git commit -m "feat: add payment_method to orders"
-# → husky pre-commit fires → checksums.json auto-updated and staged
+# → pre-commit hook fires → checksums.json auto-updated and staged
 
 # 4. Open a PR → validate-pr.yml runs automatically
 # 5. Merge → migrate.yml promotes dev → staging → prod (with approval gate)
@@ -52,7 +52,7 @@ npm run migrate
 │       ├── migrate.yml         # Main pipeline: dev → staging → prod
 │       └── validate-pr.yml     # PR checks: types, naming, checksums
 │
-├── .husky/
+├── .githooks/
 │   └── pre-commit              # Auto-records checksums on migration commits
 │
 ├── config/
@@ -130,7 +130,7 @@ file, Drizzle silently skips it (it's already marked as applied).
 
 | Command | When to run |
 |---|---|
-| `npm run checksum record` | After `drizzle-kit generate` (husky does this automatically on commit) |
+| `npm run checksum record` | After `drizzle-kit generate` (pre-commit hook does this automatically on commit) |
 | `npm run checksum verify` | Before `migrate` in CI (all three environments) |
 
 The CI pipeline **always runs `verify` before migrating** — a tampered file
