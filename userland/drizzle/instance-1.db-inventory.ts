@@ -1,12 +1,12 @@
 // =============================================================================
-// drizzle.instance-1.db-inventory.config.ts
+// userland/drizzle/instance-1.db-inventory.ts
 // =============================================================================
 
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  schema: './src/schemas/instance-1/db-inventory/index.ts',
-  out:    './migrations/instances/instance-1/db-inventory',
+  schema:  '../schemas/instance-1/db-inventory/index.ts',
+  out:     '../migrations/instances/instance-1/db-inventory',
   dialect: 'postgresql',
 
   dbCredentials: {

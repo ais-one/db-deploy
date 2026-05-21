@@ -17,10 +17,10 @@ on:
   push:
     branches: [main]
     paths:
-      - "migrations/**"
-      - "src/schemas/**"
-      - "config/databases.yml"
-      - "checksums.json"
+      - "userland/migrations/**"
+      - "userland/schemas/**"
+      - "userland/databases.yml"
+      - "userland/checksums.json"
 
   workflow_dispatch:
     inputs:
@@ -126,7 +126,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(schema): snapshot ${{ matrix.instance }}/${{ matrix.db }} [dev] [skip ci]"
-          file_pattern: "schemas/${{ matrix.instance }}/${{ matrix.db }}/**"
+          file_pattern: "userland/snapshots/${{ matrix.instance }}/${{ matrix.db }}/**"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
 
@@ -181,7 +181,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(schema): snapshot ${{ matrix.instance }}/${{ matrix.db }} [staging] [skip ci]"
-          file_pattern: "schemas/${{ matrix.instance }}/${{ matrix.db }}/**"
+          file_pattern: "userland/snapshots/${{ matrix.instance }}/${{ matrix.db }}/**"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
 
@@ -236,7 +236,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(schema): snapshot ${{ matrix.instance }}/${{ matrix.db }} [prod] [skip ci]"
-          file_pattern: "schemas/${{ matrix.instance }}/${{ matrix.db }}/**"
+          file_pattern: "userland/snapshots/${{ matrix.instance }}/${{ matrix.db }}/**"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
 

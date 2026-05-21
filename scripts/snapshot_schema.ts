@@ -15,8 +15,7 @@
 // =============================================================================
 
 import { execSync }                   from 'child_process';
-import { writeFileSync, mkdirSync,
-         readFileSync, existsSync }   from 'fs';
+import { writeFileSync, mkdirSync }   from 'fs';
 import { join }                       from 'path';
 
 // ── Config from environment ────────────────────────────────────────────────
@@ -34,7 +33,7 @@ for (const [k, v] of Object.entries({ INSTANCE, DB, DB_TYPE, DB_HOST, DB_USER, D
 
 // ── Paths ──────────────────────────────────────────────────────────────────
 const timestamp     = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19).replace('T', '_');
-const schemaDir     = join('schemas', INSTANCE, DB);
+const schemaDir     = join('userland', 'snapshots', INSTANCE, DB);
 const versionedFile = join(schemaDir, `schema_${timestamp}.sql`);
 const latestFile    = join(schemaDir, 'schema_latest.sql');
 

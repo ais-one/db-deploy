@@ -1,11 +1,11 @@
 // =============================================================================
-// drizzle.instance-1.db-orders.config.ts
+// userland/drizzle/instance-1.db-orders.ts
 // =============================================================================
 // Drizzle Kit config for instance-1 / db-orders (Postgres).
 //
 // Usage:
-//   drizzle-kit generate --config=config/drizzle/instance-1.db-orders.ts
-//   drizzle-kit studio  --config=config/drizzle/instance-1.db-orders.ts
+//   drizzle-kit generate --config=userland/drizzle/instance-1.db-orders.ts
+//   drizzle-kit studio  --config=userland/drizzle/instance-1.db-orders.ts
 //
 // Connection is read from environment variables (injected by CI or .env.local).
 // =============================================================================
@@ -14,10 +14,10 @@ import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
   // Path to the schema file for this database
-  schema: './src/schemas/instance-1/db-orders/index.ts',
+  schema: '../schemas/instance-1/db-orders/index.ts',
 
   // Where generated migration SQL files will be written
-  out: './migrations/instances/instance-1/db-orders',
+  out: '../migrations/instances/instance-1/db-orders',
 
   dialect: 'postgresql',
 

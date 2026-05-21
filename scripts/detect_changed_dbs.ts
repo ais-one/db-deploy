@@ -6,8 +6,8 @@
 // then builds a GitHub Actions matrix JSON blob written to GITHUB_OUTPUT.
 //
 // Watches two path types:
-//   migrations/instances/<instance>/<db>/**   ← generated SQL files
-//   src/schemas/<instance>/<db>/**            ← TypeScript schema source
+//   userland/migrations/instances/<instance>/<db>/**   ← generated SQL files
+//   userland/schemas/<instance>/<db>/**                ← TypeScript schema source
 //
 // Usage (GitHub Actions):
 //   DEPLOY_ENV=development tsx scripts/detect_changed_dbs.ts
@@ -15,7 +15,7 @@
 
 import { execSync }  from 'child_process';
 import { appendFileSync } from 'fs';
-import { loadRegistry }  from '../config/loader.js';
+import { loadRegistry }  from './loader.js';
 
 const DEPLOY_ENV    = process.env.DEPLOY_ENV    ?? 'development';
 const GITHUB_OUTPUT = process.env.GITHUB_OUTPUT ?? '/dev/stdout';
@@ -40,18 +40,23 @@ function parseChangedDbs(files: string[]): Set<string> {
   for (const path of files) {
     const parts = path.split('/');
 
-    // migrations/instances/<instance>/<db>/...
-    if (parts[0] === 'migrations' && parts[1] === 'instances' && parts.length >= 4) {
+    // userland/migrations/instances/<instance>/<db>/...
+    if (
+      parts[0] === 'userland' &&
+      parts[1] === 'migrations' &&
+      parts[2] === 'instances' &&
+      parts.length >= 5
+    ) {
+      changed.add(`${parts[3]}/${parts[4]}`);
+    }
+
+    // userland/schemas/<instance>/<db>/...
+    if (parts[0] === 'userland' && parts[1] === 'schemas' && parts.length >= 4) {
       changed.add(`${parts[2]}/${parts[3]}`);
     }
 
-    // src/schemas/<instance>/<db>/...
-    if (parts[0] === 'src' && parts[1] === 'schemas' && parts.length >= 4) {
-      changed.add(`${parts[2]}/${parts[3]}`);
-    }
-
-    // config/databases.yml → treat as all databases changed
-    if (path === 'config/databases.yml') {
+    // userland/databases.yml → treat as all databases changed
+    if (path === 'userland/databases.yml') {
       changed.add('__all__');
     }
   }
@@ -103,7 +108,7 @@ for (const [instanceName, instanceCfg] of Object.entries(registry.instances)) {
       snapshot_enabled: dbCfg.snapshot_enabled,
       migrations_path:  dbCfg.migrations_path,
       schema_path:      dbCfg.schema_path,
-      drizzle_config:   `config/drizzle/${instanceName}.${dbCfg.name}.ts`,
+      drizzle_config:   `userland/drizzle/${instanceName}.${dbCfg.name}.ts`,
     });
   }
 }

@@ -1,12 +1,12 @@
 // =============================================================================
-// drizzle.instance-2.db-users.config.ts
+// userland/drizzle/instance-2.db-users.ts
 // =============================================================================
 
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  schema: './src/schemas/instance-2/db-users/index.ts',
-  out:    './migrations/instances/instance-2/db-users',
+  schema:  '../schemas/instance-2/db-users/index.ts',
+  out:     '../migrations/instances/instance-2/db-users',
   dialect: 'mysql',
 
   dbCredentials: {

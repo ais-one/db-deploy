@@ -17,10 +17,10 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "migrations/**"
-      - "src/schemas/**"
-      - "checksums.json"
-      - "config/**"
+      - "userland/migrations/**"
+      - "userland/schemas/**"
+      - "userland/checksums.json"
+      - "userland/**"
 
 jobs:
   validate:
@@ -73,7 +73,7 @@ jobs:
         run: |
           # Get changed schema TS files
           CHANGED_SCHEMAS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
-            | grep '^src/schemas/' || true)
+            | grep '^userland/schemas/' || true)
 
           if [ -z "$CHANGED_SCHEMAS" ]; then
             echo "No schema files changed."
@@ -85,12 +85,12 @@ jobs:
 
           # Corresponding migration paths must also have new files
           CHANGED_MIGRATIONS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
-            | grep '^migrations/' || true)
+            | grep '^userland/migrations/' || true)
 
           if [ -z "$CHANGED_MIGRATIONS" ]; then
             echo ""
             echo "⚠️  WARNING: Schema files changed but no migration files were generated."
-            echo "   Did you forget to run: drizzle-kit generate --config=config/drizzle/<instance>.<db>.ts ?"
+            echo "   Did you forget to run: drizzle-kit generate --config=userland/drizzle/<instance>.<db>.ts ?"
             echo ""
             echo "   This is a warning, not a failure — data migrations without schema changes are valid."
           else

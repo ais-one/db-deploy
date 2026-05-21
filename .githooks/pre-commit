@@ -2,11 +2,11 @@
 # Automatically re-records checksums whenever migration SQL files are staged.
 # Ensures checksums.json stays in sync locally without manual steps.
 
-STAGED_MIGRATIONS=$(git diff --cached --name-only | grep '^migrations/.*\.sql$' || true)
+STAGED_MIGRATIONS=$(git diff --cached --name-only | grep '^userland/migrations/.*\.sql$' || true)
 
 if [ -n "$STAGED_MIGRATIONS" ]; then
   echo "Migration files staged — updating checksums.json..."
   npx tsx scripts/checksum_guard.ts record
-  git add checksums.json
+  git add userland/checksums.json
   echo "checksums.json updated and staged."
 fi

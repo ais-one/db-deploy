@@ -25,14 +25,14 @@ instances:
         port: 5432
     databases:
       - name: db-orders
-        schema_path: src/schemas/instance-1/db-orders/index.ts
-        migrations_path: migrations/instances/instance-1/db-orders
+        schema_path: userland/schemas/instance-1/db-orders/index.ts
+        migrations_path: userland/migrations/instances/instance-1/db-orders
         user_secret: INSTANCE1_ORDERS_USER
         pass_secret: INSTANCE1_ORDERS_PASS
         snapshot_enabled: true
       - name: db-inventory
-        schema_path: src/schemas/instance-1/db-inventory/index.ts
-        migrations_path: migrations/instances/instance-1/db-inventory
+        schema_path: userland/schemas/instance-1/db-inventory/index.ts
+        migrations_path: userland/migrations/instances/instance-1/db-inventory
         user_secret: INSTANCE1_INVENTORY_USER
         pass_secret: INSTANCE1_INVENTORY_PASS
         snapshot_enabled: true
@@ -52,8 +52,8 @@ instances:
         port: 3306
     databases:
       - name: db-users
-        schema_path: src/schemas/instance-2/db-users/index.ts
-        migrations_path: migrations/instances/instance-2/db-users
+        schema_path: userland/schemas/instance-2/db-users/index.ts
+        migrations_path: userland/migrations/instances/instance-2/db-users
         user_secret: INSTANCE2_USERS_USER
         pass_secret: INSTANCE2_USERS_PASS
         snapshot_enabled: true

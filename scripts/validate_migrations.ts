@@ -20,7 +20,7 @@
 
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join }  from 'path';
-import { loadRegistry } from '../config/loader.js';
+import { loadRegistry } from './loader.js';
 
 const MIGRATION_RE = /^(\d{4})_([a-z0-9_]+)\.sql$/;
 

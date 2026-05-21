@@ -1,7 +1,7 @@
 // =============================================================================
-// config/loader.ts
+// scripts/loader.ts
 // =============================================================================
-// Reads databases.yml and provides typed access to the registry.
+// Reads userland/databases.yml and provides typed access to the registry.
 // Used by all scripts and drizzle config generators.
 // =============================================================================
 
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REGISTRY_PATH = join(__dirname, 'databases.yml');
+const REGISTRY_PATH = join(__dirname, '../userland/databases.yml');
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

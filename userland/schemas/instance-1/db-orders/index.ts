@@ -1,11 +1,11 @@
 // =============================================================================
-// src/schemas/instance-1/db-orders/index.ts
+// userland/schemas/instance-1/db-orders/index.ts
 // =============================================================================
 // Drizzle schema definition for the db-orders database (Postgres).
 //
 // THIS IS THE SOURCE OF TRUTH. Never edit migration SQL files by hand —
 // change this file, then run:
-//   drizzle-kit generate --config=config/drizzle/instance-1.db-orders.ts
+//   drizzle-kit generate --config=userland/drizzle/instance-1.db-orders.ts
 //
 // Drizzle will diff this schema against the last generated snapshot and
 // produce a new numbered SQL migration file automatically.

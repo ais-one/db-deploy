@@ -8,11 +8,11 @@
 // migration directory. It:
 //
 //   1. On RECORD mode: computes SHA-256 of every .sql file in every
-//      migrations directory and writes/updates checksums.json.
+//      migrations directory and writes/updates userland/checksums.json.
 //      Run this after `drizzle-kit generate` in CI.
 //
 //   2. On VERIFY mode: re-computes checksums and compares against the
-//      committed checksums.json. Fails if any file has changed.
+//      committed userland/checksums.json. Fails if any file has changed.
 //      Run this before `migrate` in CI — protects production.
 //
 // Usage:
@@ -24,10 +24,10 @@ import { createHash }                    from 'crypto';
 import { readFileSync, writeFileSync,
          readdirSync, existsSync }        from 'fs';
 import { join, basename }                from 'path';
-import { loadRegistry }                  from '../config/loader.js';
+import { loadRegistry }                  from './loader.js';
 
 const MODE = (process.argv[2] ?? 'verify') as 'verify' | 'record';
-const CHECKSUM_FILE = 'checksums.json';
+const CHECKSUM_FILE = 'userland/checksums.json';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type ChecksumMap = Record<string, string>; // filename → sha256

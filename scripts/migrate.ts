@@ -17,7 +17,7 @@ import { migrate as migratePg }    from 'drizzle-orm/node-postgres/migrator';
 import { migrate as migrateMysql } from 'drizzle-orm/mysql2/migrator';
 import pg      from 'pg';
 import mysql   from 'mysql2/promise';
-import { loadRegistry, resolveDatabase } from '../config/loader.js';
+import { loadRegistry, resolveDatabase } from './loader.js';
 
 const { Pool } = pg;
 

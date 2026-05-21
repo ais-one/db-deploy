@@ -10,9 +10,9 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@schemas/*": ["src/schemas/*"]
+      "@schemas/*": ["userland/schemas/*"]
     }
   },
-  "include": ["src/**/*", "scripts/**/*", "config/**/*.ts"],
+  "include": ["scripts/**/*", "userland/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
